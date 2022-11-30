@@ -2338,12 +2338,17 @@ extension NextLevel {
 	///
 	/// - Returns: Zoom threshold  or nil
 	public func switchOverVideoZoomFactorForDeviceType(_ deviceType: AVCaptureDevice.DeviceType) -> Float? {
-		guard let device = _currentDevice,
-			  let index = device.constituentDevices.firstIndex(where: { $0.deviceType == deviceType }) else {
-			return nil
-		}
-
-		return index > 0 ? device.virtualDeviceSwitchOverVideoZoomFactors[index - 1].floatValue : Float(device.minAvailableVideoZoomFactor)
+        if #available(iOS 13.0, *) {
+            guard let device = _currentDevice,
+                  let index = device.constituentDevices.firstIndex(where: { $0.deviceType == deviceType }) else {
+                return nil
+            }
+            
+            return index > 0 ? device.virtualDeviceSwitchOverVideoZoomFactors[index - 1].floatValue : Float(device.minAvailableVideoZoomFactor)
+        } else {
+            // Fallback on earlier versions
+            return nil
+        }
 	}
 
     /// Triggers a photo capture from the last video frame.
