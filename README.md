@@ -1,3 +1,9 @@
+## This is an iOS 12 compatible fork of NextLevel
+
+iOS 12 was last available at verion 0.17.0 of NextLevel. To use this in your project go to the tags in this repo, and add the most recent 0.17.x tag.
+
+We still keep main up to date with NextLevel, so we can cherry-pick compatabile changes over to the ios-12-compat-branch.
+
 <p><img src="https://raw.github.com/NextLevel/NextLevel/master/NextLevel%402x.png" alt="Next Level" style="max-width:100%;"></p>
 
 `NextLevel` is a [Swift](https://developer.apple.com/swift/) camera system designed for easy integration, customized media capture, and image streaming in iOS. Integration can optionally leverage `AVFoundation` or `ARKit`.
