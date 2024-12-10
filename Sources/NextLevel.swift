@@ -1346,21 +1346,23 @@ extension NextLevel {
         }
         
         if #available(iOS 13.0, *) {
-            let currentDeviceOrientation = UIApplication.shared.windows
-                .first?
-                .windowScene?
-                .interfaceOrientation
-            switch currentDeviceOrientation {
-            case .portrait:
-                return .portrait
-            case .landscapeLeft:
-                return .landscapeLeft
-            case .landscapeRight:
-                return .landscapeRight
-            case .portraitUpsideDown:
-                return .portraitUpsideDown
-            default:
-                return .portrait
+            return DispatchQueue.main.sync {
+                let currentDeviceOrientation = UIApplication.shared.windows
+                    .first?
+                    .windowScene?
+                    .interfaceOrientation
+                switch currentDeviceOrientation {
+                case .portrait:
+                    return AVCaptureVideoOrientation.portrait
+                case .landscapeLeft:
+                    return AVCaptureVideoOrientation.landscapeLeft
+                case .landscapeRight:
+                    return AVCaptureVideoOrientation.landscapeRight
+                case .portraitUpsideDown:
+                    return AVCaptureVideoOrientation.portraitUpsideDown
+                default:
+                    return AVCaptureVideoOrientation.portrait
+                }
             }
         } else {
             let currentDeviceOrientation: UIDeviceOrientation = UIDevice.current.orientation
