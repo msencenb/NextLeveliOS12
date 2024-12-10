@@ -81,11 +81,23 @@ public enum NextLevelDeviceType: Int, CustomStringConvertible {
             return AVCaptureDevice.DeviceType.builtInTrueDepthCamera
             #endif
         case .dualWideCamera:
-            return AVCaptureDevice.DeviceType.builtInDualWideCamera
+            if #available(iOS 13.0, *) {
+                return AVCaptureDevice.DeviceType.builtInDualWideCamera
+            } else {
+                return AVCaptureDevice.DeviceType.builtInDualCamera
+            }
         case .ultraWideAngleCamera:
-            return AVCaptureDevice.DeviceType.builtInUltraWideCamera
+            if #available(iOS 13.0, *) {
+                return AVCaptureDevice.DeviceType.builtInUltraWideCamera
+            } else {
+                return AVCaptureDevice.DeviceType.builtInDualCamera
+            }
         case .tripleCamera:
-            return AVCaptureDevice.DeviceType.builtInTripleCamera
+            if #available(iOS 13.0, *) {
+                return AVCaptureDevice.DeviceType.builtInTripleCamera
+            } else {
+                return AVCaptureDevice.DeviceType.builtInDualCamera
+            }
         }
     }
 
@@ -2312,14 +2324,16 @@ extension NextLevel {
     /// Checks if video capture is supported by the hardware.
     public var isVideoCaptureSupported: Bool {
         get {
-            let deviceTypes: [AVCaptureDevice.DeviceType] = [.builtInWideAngleCamera,
+            var deviceTypes: [AVCaptureDevice.DeviceType] = [.builtInWideAngleCamera,
                                                              .builtInTelephotoCamera,
                                                              .builtInDualCamera,
-                                                             .builtInTrueDepthCamera,
-                                                             .builtInUltraWideCamera,
-                                                             .builtInDualWideCamera,
-                                                             .builtInTripleCamera]
-//            if #available(iOS 15.4, *) {
+                                                             .builtInTrueDepthCamera]
+            if #available(iOS 13.0, *) {
+                deviceTypes.append(contentsOf: [.builtInUltraWideCamera,
+                                                .builtInDualWideCamera,
+                                                .builtInTripleCamera])
+            }
+            //            if #available(iOS 15.4, *) {
 //                deviceTypes.append(contentsOf: [.builtInLiDARDepthCamera])
 //            }
             let discoverySession = AVCaptureDevice.DiscoverySession(deviceTypes: deviceTypes, mediaType: AVMediaType.video, position: .unspecified)
@@ -2365,7 +2379,8 @@ extension NextLevel {
 	/// Fetch threshold value where a device of the specified type might be chosen when zooming in using a composite camera.
 	///
 	/// - Returns: Zoom threshold  or nil
-	public func switchOverVideoZoomFactorForDeviceType(_ deviceType: AVCaptureDevice.DeviceType) -> Float? {
+    @available(iOS 13.0, *)
+    public func switchOverVideoZoomFactorForDeviceType(_ deviceType: AVCaptureDevice.DeviceType) -> Float? {
 		guard let device = _currentDevice,
 			  let index = device.constituentDevices.firstIndex(where: { $0.deviceType == deviceType }) else {
 			return nil
@@ -2590,9 +2605,11 @@ extension NextLevel {
             photoSettings.isHighResolutionPhotoEnabled = self.photoConfiguration.isHighResolutionEnabled
             photoOutput.isHighResolutionCaptureEnabled = self.photoConfiguration.isHighResolutionEnabled
 
-			photoSettings.photoQualityPrioritization = photoConfiguration.photoQualityPrioritization
-			photoOutput.maxPhotoQualityPrioritization = photoConfiguration.photoQualityPrioritization
-
+            if #available(iOS 13.0, *) {
+                photoSettings.photoQualityPrioritization = photoConfiguration.photoQualityPrioritization
+                photoOutput.maxPhotoQualityPrioritization = photoConfiguration.photoQualityPrioritization
+            }
+			
             #if USE_TRUE_DEPTH
             if photoOutput.isDepthDataDeliverySupported {
                 photoOutput.isDepthDataDeliveryEnabled = self.photoConfiguration.isDepthDataEnabled
