@@ -760,6 +760,10 @@ extension NextLevelSession {
             var audioTrack: AVMutableCompositionTrack?
 
             var currentTime = composition.duration
+            
+            
+            // Grab the orientation of the very last video clip recorded to apply that to the rest of the video for normalizing.
+            let lastVideoTrack = self.clips.last?.asset?.tracks(withMediaType: .video).last
 
             for clip: NextLevelClip in self._clips {
                 if let asset = clip.asset {
@@ -781,6 +785,10 @@ extension NextLevelSession {
                         }
 
                         if let foundTrack = videoTrack {
+                            //  If we have a last clip, normalize all to that orientation instead of anything else
+                            if let lastTransform = lastVideoTrack?.preferredTransform {
+                                foundTrack.preferredTransform = lastTransform
+                            }
                             videoTime = self.appendTrack(track: videoAssetTrack, toCompositionTrack: foundTrack, withStartTime: videoTime, range: maxRange)
                             maxRange = videoTime
                         }
