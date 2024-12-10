@@ -1327,6 +1327,45 @@ extension NextLevel {
             }
         }
     }
+    
+    internal func avOrientationFromDeviceOrientation() -> AVCaptureVideoOrientation {
+        if let delegateOrientation = self.deviceDelegate?.nextLevelCurrentDeviceOrientation?() {
+            return delegateOrientation
+        }
+        
+        if #available(iOS 13.0, *) {
+            let currentDeviceOrientation = UIApplication.shared.windows
+                .first?
+                .windowScene?
+                .interfaceOrientation
+            switch currentDeviceOrientation {
+            case .portrait:
+                return .portrait
+            case .landscapeLeft:
+                return .landscapeLeft
+            case .landscapeRight:
+                return .landscapeRight
+            case .portraitUpsideDown:
+                return .portraitUpsideDown
+            default:
+                return .portrait
+            }
+        } else {
+            let currentDeviceOrientation: UIDeviceOrientation = UIDevice.current.orientation
+            switch currentDeviceOrientation {
+            case .portrait:
+                return .portrait
+            case .landscapeLeft:
+                return .landscapeRight
+            case .landscapeRight:
+                return .landscapeLeft
+            case .portraitUpsideDown:
+                return .portraitUpsideDown
+            default:
+                return .portrait
+            }
+        }
+    }
 
     internal func updateVideoOrientation() {
         if let session = self._recordingSession {
@@ -1336,7 +1375,7 @@ extension NextLevel {
         }
 
         var didChangeOrientation = false
-		let currentOrientation = self.deviceDelegate?.nextLevelCurrentDeviceOrientation?() ?? AVCaptureVideoOrientation.avorientationFromUIDeviceOrientation(UIDevice.current.orientation)
+        let currentOrientation = avOrientationFromDeviceOrientation()
 
         if let previewConnection = self.previewLayer.connection {
             if previewConnection.isVideoOrientationSupported && previewConnection.videoOrientation != currentOrientation {
