@@ -1346,23 +1346,37 @@ extension NextLevel {
         }
         
         if #available(iOS 13.0, *) {
-            return DispatchQueue.main.sync {
-                let currentDeviceOrientation = UIApplication.shared.windows
+            var currentDeviceOrientation : UIInterfaceOrientation? = nil
+            if Thread.isMainThread {
+                currentDeviceOrientation = UIApplication.shared.windows
                     .first?
                     .windowScene?
                     .interfaceOrientation
-                switch currentDeviceOrientation {
-                case .portrait:
-                    return AVCaptureVideoOrientation.portrait
-                case .landscapeLeft:
-                    return AVCaptureVideoOrientation.landscapeLeft
-                case .landscapeRight:
-                    return AVCaptureVideoOrientation.landscapeRight
-                case .portraitUpsideDown:
-                    return AVCaptureVideoOrientation.portraitUpsideDown
-                default:
-                    return AVCaptureVideoOrientation.portrait
-                }
+            } else {
+              currentDeviceOrientation = DispatchQueue.main.sync {
+                return UIApplication.shared.windows
+                      .first?
+                      .windowScene?
+                      .interfaceOrientation
+              }
+            }
+            
+            guard let orientation = currentDeviceOrientation else {
+                // Handle nil case
+                return  AVCaptureVideoOrientation.portrait
+            }
+            
+            switch orientation {
+            case .portrait:
+                return AVCaptureVideoOrientation.portrait
+            case .landscapeLeft:
+                return AVCaptureVideoOrientation.landscapeLeft
+            case .landscapeRight:
+                return AVCaptureVideoOrientation.landscapeRight
+            case .portraitUpsideDown:
+                return AVCaptureVideoOrientation.portraitUpsideDown
+            default:
+                return AVCaptureVideoOrientation.portrait
             }
         } else {
             let currentDeviceOrientation: UIDeviceOrientation = UIDevice.current.orientation
