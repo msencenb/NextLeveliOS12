@@ -714,88 +714,25 @@ extension NextLevelSession {
     public func mergeClips(usingPreset preset: String, completionHandler: @escaping NextLevelSessionMergeClipsCompletionHandler) {
         self.executeClosureAsyncOnSessionQueueIfNecessary {
             let filename = "\(self.identifier.uuidString)-NL-merged.\(self.fileExtension)"
-            
+
             let outputURL = NextLevelClip.clipURL(withFilename: filename, directoryPath: self.outputDirectory)
             var asset: AVAsset?
-            
+
             if !self._clips.isEmpty {
+
                 if self._clips.count == 1 {
                     debugPrint("NextLevel, warning, a merge was requested for a single clip, use lastClipUrl instead")
                 }
-                
-                // Get the asset which already has the composition
+
                 asset = self.asset
-                
-                // Get the target size from the last clip
-                guard let lastClip = self._clips.last,
-                      let lastVideoTrack = lastClip.asset?.tracks(withMediaType: .video).first else {
-                    return
-                }
-                
-                let naturalSize = lastVideoTrack.naturalSize
-                let lastTransform = lastVideoTrack.preferredTransform
-                let isPortrait = abs(lastTransform.b) == 1.0 || abs(lastTransform.c) == 1.0
-                
-                // Create video composition
-                let videoComposition = AVMutableVideoComposition()
-                
-                // Set composition render size based on orientation
-                videoComposition.renderSize = isPortrait ?
-                    CGSize(width: min(naturalSize.width, naturalSize.height),
-                          height: max(naturalSize.width, naturalSize.height)) :
-                    CGSize(width: max(naturalSize.width, naturalSize.height),
-                          height: min(naturalSize.width, naturalSize.height))
-                
-                videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-                
-                // Create composition instructions
-                let instructions = self._clips.enumerated().compactMap { (index, clip) -> AVMutableVideoCompositionInstruction? in
-                    guard let videoTrack = clip.asset?.tracks(withMediaType: .video).first else { return nil }
-                    
-                    let instruction = AVMutableVideoCompositionInstruction()
-                    let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-                    
-                    // Calculate transform
-                    var transform = videoTrack.preferredTransform
-                    let currentSize = videoTrack.naturalSize
-                    let isCurrentPortrait = abs(transform.b) == 1.0 || abs(transform.c) == 1.0
-                    
-                    // Calculate scaling
-                    let scale: CGFloat
-                    if isCurrentPortrait == isPortrait {
-                        scale = min(videoComposition.renderSize.width / currentSize.width,
-                                  videoComposition.renderSize.height / currentSize.height)
-                    } else {
-                        scale = min(videoComposition.renderSize.width / currentSize.height,
-                                  videoComposition.renderSize.height / currentSize.width)
-                    }
-                    
-                    transform = transform.concatenating(CGAffineTransform(scaleX: scale, y: scale))
-                    
-                    // Center the video
-                    let xTranslation = (videoComposition.renderSize.width - currentSize.width * scale) / 2
-                    let yTranslation = (videoComposition.renderSize.height - currentSize.height * scale) / 2
-                    transform = transform.concatenating(CGAffineTransform(translationX: xTranslation, y: yTranslation))
-                    
-                    layerInstruction.setTransform(transform, at: .zero)
-                    
-                    instruction.layerInstructions = [layerInstruction]
-                    instruction.timeRange = videoTrack.timeRange
-                    return instruction
-                }
-                
-                videoComposition.instructions = instructions
-                
-                if let exportURL = outputURL {
+
+                if let exportAsset = asset, let exportURL = outputURL {
                     self.removeFile(fileUrl: exportURL)
-                    
-                    if let exportAsset = asset,
-                       let exportSession = AVAssetExportSession(asset: exportAsset, presetName: preset) {
+
+                    if let exportSession = AVAssetExportSession(asset: exportAsset, presetName: preset) {
                         exportSession.shouldOptimizeForNetworkUse = true
                         exportSession.outputURL = exportURL
                         exportSession.outputFileType = self.fileType
-                        exportSession.videoComposition = videoComposition
-                        
                         exportSession.exportAsynchronously {
                             DispatchQueue.main.async {
                                 completionHandler(exportURL, exportSession.error)
@@ -805,7 +742,7 @@ extension NextLevelSession {
                     }
                 }
             }
-            
+
             DispatchQueue.main.async {
                 completionHandler(nil, NextLevelError.unknown)
             }
@@ -816,6 +753,7 @@ extension NextLevelSession {
 // MARK: - composition
 
 extension NextLevelSession {
+
     internal func appendClips(toComposition composition: AVMutableComposition, audioMix: AVMutableAudioMix? = nil) {
         self.executeClosureSyncOnSessionQueueIfNecessary {
             var videoTrack: AVMutableCompositionTrack?
